@@ -1,75 +1,44 @@
-# React + TypeScript + Vite
+# Pirate Battle - Desafio de Desenvolvimento React & PixiJS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📌 Visão Geral do Projeto
 
-Currently, two official plugins are available:
+Este repositório contém a versão inicial do jogo **Pirate Battle**, desenvolvida como parte de um desafio técnico utilizando **React** e **PixiJS**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Nesta etapa do projeto, foram implementadas as fundações básicas:
+- **Mecânica principal do jogo**: Movimentação, colisão e gerenciamento de vida.
+- **Carregamento de Sprites e Canvas**: Carregamento inicial de assets gráficos via PixiJS.
+- **Tela Inicial / Identificação**: Interface em React onde o jogador insere o nome do seu capitão antes de iniciar.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📝 Nota sobre o Progresso e Desafios (Prazo de 2 Dias)
 
-## Expanding the ESLint configuration
+Devido ao prazo reduzido do desafio (2 dias) e à minha pouca experiência prévia com bibliotecas de renderização gráfica 2D/Canvas (PixiJS), não seria possível avançar para completar o jogo de maneira satisfatoria e completa.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Para o meu nível atual de conhecimento nessas tecnologias gráficas específicas, seria inviável entregar uma aplicação totalmente completa e funcional em apenas 48 horas. No entanto, esta etapa serviu para estruturar a base do projeto e entender a integração do React com o ciclo de renderização do PixiJS.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+**Com mais tempo para estudo e aprofundamento na biblioteca:**
+Seria perfeitamente possível evoluir o projeto para uma versão completa, incluindo:
+- Menus completos de Pause, Opções, Ranking e Histórico de Partidas.
+- Efeitos visuais avançados e otimização do ciclo de vida do Canvas.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 💡 Sobre o TanStack Query e Gerenciamento de Estado
+O fato de não ter avançado até as etapas que utilizam **TanStack Query (React Query)** nesta entrega **não significa falta de conhecimento**. Pelo contrário: **essa é justamente a parte que tenho experiência**.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Como TanStack Query é uma ferramenta que já utilizo, optei por gastar o tempo do teste encarando a curva de aprendizado da engine gráfica. Para demonstrar meu domínio em TanStack Query, consumo de APIs e gerenciamento de estado assíncrono, deixo abaixo o link de um projeto do meu portfólio onde estou implementando o uso de TanStack:
 
-```
+**[Link para o projeto com TanStack Query](https://github.com/jlucassaldanha/ticketdevweb/tree/dev)**
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Como Executar o Projeto
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. **Instalar as dependências:**
+   ```bash
+   npm install
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. **Executar em modo de desenvolvimento:**
+   ```bash
+   npm run dev
+   ```
 
-```
+3. Acesse `http://localhost:5173` no navegador.
