@@ -1,23 +1,23 @@
-import { Container, Graphics } from 'pixi.js'
+import { Container, Graphics, Sprite, Texture } from 'pixi.js'
 import { Projectile } from './Projectile'
 
 export type EnemyType = 'chaser' | 'shooter'
 
 export class Enemy {
   public container: Container
-  private sprite: Graphics
+  private sprite: Sprite | Graphics
   private healthBar: Graphics
   public type: EnemyType
 
   public hp: number
   public maxHp: number
   public isDead = false
-  public radius = 18
+  public radius = 20
 
   private speed: number
   private shootCooldown = 0
 
-  constructor(x: number, y: number, type: EnemyType = 'chaser') {
+  constructor(x: number, y: number, type: EnemyType = 'chaser', texture?: Texture) {
     this.container = new Container()
     this.container.x = x
     this.container.y = y
@@ -33,12 +33,23 @@ export class Enemy {
       this.speed = 1.4
     }
 
-    this.sprite = new Graphics()
-      .rect(-15, -10, 30, 20)
-      .fill(type === 'chaser' ? 0xf4a261 : 0x9d4edd)
-      .stroke({ width: 2, color: 0xffffff })
-
-    this.container.addChild(this.sprite)
+    if (texture && texture instanceof Texture) {
+      const s = new Sprite(texture)
+      s.anchor.set(0.5)
+      // Ajusta orientação: os sprites de navios apontam para CIMA por padrão
+      // Adicionando PI/2 (90 deg), alinhamos com a direção de movimento 0 (DIREITA)
+      s.rotation = Math.PI / 2
+      s.width = 40
+      s.height = 30
+      this.sprite = s
+      this.container.addChild(s)
+    } else {
+      this.sprite = new Graphics()
+        .rect(-15, -10, 30, 20)
+        .fill(type === 'chaser' ? 0xf4a261 : 0x9d4edd)
+        .stroke({ width: 2, color: 0xffffff })
+      this.container.addChild(this.sprite)
+    }
 
     this.healthBar = new Graphics()
     this.container.addChild(this.healthBar)
@@ -48,10 +59,10 @@ export class Enemy {
   public updateHealthBar() {
     this.healthBar.clear()
 
-    const barWidth = 30
-    const barHeight = 4
+    const barWidth = 34
+    const barHeight = 5
     const barX = -barWidth / 2
-    const barY = -22
+    const barY = -28
 
     this.healthBar.rect(barX, barY, barWidth, barHeight).fill(0x1b2a4a).stroke({ width: 1, color: 0x000000 })
 
@@ -67,7 +78,8 @@ export class Enemy {
   public update(
     delta: number,
     playerPos: { x: number; y: number },
-    onEnemyShoot: (p: Projectile) => void
+    onEnemyShoot: (p: Projectile) => void,
+    projectileTexture?: Texture
   ) {
     if (this.isDead) return
 
@@ -90,7 +102,7 @@ export class Enemy {
       if (this.shootCooldown > 0) this.shootCooldown -= delta
       if (distanceToPlayer <= 320 && this.shootCooldown <= 0) {
         this.shootCooldown = 90
-        onEnemyShoot(new Projectile(this.container.x, this.container.y, angleToPlayer, true))
+        onEnemyShoot(new Projectile(this.container.x, this.container.y, angleToPlayer, true, projectileTexture))
       }
     }
   }

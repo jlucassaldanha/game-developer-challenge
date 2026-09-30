@@ -1,10 +1,10 @@
-import { Container, Graphics } from 'pixi.js'
+import { Container, Graphics, Sprite, Texture } from 'pixi.js'
 import { InputManager } from '../systems/InputManager'
 import { Projectile } from './Projectile'
 
 export class PlayerShip {
   public container: Container
-  private sprite: Graphics
+  private sprite: Sprite | Graphics
   private healthBar: Graphics
   
   private speed = 0
@@ -19,17 +19,28 @@ export class PlayerShip {
   public hp = 100
   public maxHp = 100
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, texture?: Texture) {
     this.container = new Container()
     this.container.x = x
     this.container.y = y
 
-    this.sprite = new Graphics()
-      .rect(-15, -10, 30, 20)
-      .fill(0xe63946)
-      .stroke({ width: 2, color: 0xffffff })
-
-    this.container.addChild(this.sprite)
+    if (texture && texture instanceof Texture) {
+      const s = new Sprite(texture)
+      s.anchor.set(0.5)
+      // Ajusta orientação: os sprites de navios apontam para CIMA por padrão
+      // Adicionando PI/2 (90 deg), alinhamos com a direção de movimento 0 (DIREITA)
+      s.rotation = Math.PI / 2
+      s.width = 44
+      s.height = 34
+      this.sprite = s
+      this.container.addChild(s)
+    } else {
+      this.sprite = new Graphics()
+        .rect(-15, -10, 30, 20)
+        .fill(0xe63946)
+        .stroke({ width: 2, color: 0xffffff })
+      this.container.addChild(this.sprite)
+    }
 
     this.healthBar = new Graphics()
     this.container.addChild(this.healthBar)
@@ -39,10 +50,10 @@ export class PlayerShip {
   public updateHealthBar() {
     this.healthBar.clear()
     
-    const barWidth = 36
-    const barHeight = 5
+    const barWidth = 40
+    const barHeight = 6
     const barX = -barWidth / 2
-    const barY = -25
+    const barY = -32
 
     this.healthBar.rect(barX, barY, barWidth, barHeight).fill(0x1b2a4a).stroke({ width: 1, color: 0x000000 })
 
@@ -59,7 +70,8 @@ export class PlayerShip {
     delta: number, 
     input: InputManager, 
     bounds: { width: number; height: number },
-    onShoot: (projectile: Projectile) => void
+    onShoot: (projectile: Projectile) => void,
+    projectileTexture?: Texture
   ) {
     if (this.frontShootCooldown > 0) this.frontShootCooldown -= delta
     if (this.sideShootCooldown > 0) this.sideShootCooldown -= delta
@@ -89,7 +101,7 @@ export class PlayerShip {
 
     if (input.isKeyDown('Space') && this.frontShootCooldown <= 0) {
       this.frontShootCooldown = 15
-      const p = new Projectile(this.container.x, this.container.y, this.container.rotation)
+      const p = new Projectile(this.container.x, this.container.y, this.container.rotation, false, projectileTexture)
       onShoot(p)
     }
 
@@ -105,7 +117,7 @@ export class PlayerShip {
       ]
 
       angles.forEach(angle => {
-        onShoot(new Projectile(this.container.x, this.container.y, angle))
+        onShoot(new Projectile(this.container.x, this.container.y, angle, false, projectileTexture))
       })
     }
   }

@@ -1,25 +1,26 @@
 export class InputManager {
-  private keys: Record<string, boolean> = {}
+  private keysState: Record<string, boolean> = {}
 
   constructor() {
-    window.addEventListener('keydown', (e) => this.onKeyDown(e))
-    window.addEventListener('keyup', (e) => this.onKeyUp(e))
+    window.addEventListener('keydown', this.handleKeyDown)
+    window.addEventListener('keyup', this.handleKeyUp)
   }
 
-  private onKeyDown(e: KeyboardEvent) {
-    this.keys[e.code] = true
+  private handleKeyDown = (e: KeyboardEvent) => {
+    this.keysState[e.code] = true
   }
 
-  private onKeyUp(e: KeyboardEvent) {
-    this.keys[e.code] = false
+  private handleKeyUp = (e: KeyboardEvent) => {
+    this.keysState[e.code] = false
   }
 
   public isKeyDown(code: string): boolean {
-    return !!this.keys[code]
+    return !!this.keysState[code]
   }
 
   public destroy() {
-    window.removeEventListener('keydown', (e) => this.onKeyDown(e))
-    window.removeEventListener('keyup', (e) => this.onKeyUp(e))
+    window.removeEventListener('keydown', this.handleKeyDown)
+    window.removeEventListener('keyup', this.handleKeyUp)
+    this.keysState = {}
   }
 }

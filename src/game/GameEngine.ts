@@ -1,5 +1,6 @@
-import { Application, Container } from "pixi.js"
+import { Application, Container, TilingSprite, Texture } from "pixi.js"
 import { InputManager } from "./systems/InputManager"
+import { AssetManager } from "./systems/AssetManager"
 import { PlayerShip } from "./entities/PlayerShip"
 import { Projectile } from "./entities/Projectile"
 import { Island } from "./entities/Island"
@@ -23,9 +24,10 @@ export class GameEngine {
 
   private inputManager: InputManager
   private player?: PlayerShip
-  private island?: Island
+  private islands: Island[] = []
   private projectiles: Projectile[] = []
   private enemies: Enemy[] = []
+  private bgTile?: TilingSprite
 
   private score = 0
   private spawnTimer = 0
@@ -54,6 +56,8 @@ export class GameEngine {
       return
     }
 
+    await AssetManager.loadAssets()
+
     const windowWidth = window.innerWidth || 1280
     const windowHeight = window.innerHeight || 720
 
@@ -69,10 +73,28 @@ export class GameEngine {
     element.appendChild(this.app.canvas)
     this.app.stage.addChild(this.container)
 
-    this.island = new Island(this.LOGICAL_WIDTH / 2, this.LOGICAL_HEIGHT / 2, 70)
-    this.container.addChild(this.island.container)
+    // Fundo de água (TilingSprite)
+    const waterTex = AssetManager.getTexture('water')
+    if (waterTex && waterTex instanceof Texture) {
+      this.bgTile = new TilingSprite({
+        texture: waterTex,
+        width: this.LOGICAL_WIDTH,
+        height: this.LOGICAL_HEIGHT
+      })
+      this.container.addChild(this.bgTile)
+    }
 
-    this.player = new PlayerShip(this.LOGICAL_WIDTH / 2, this.LOGICAL_HEIGHT / 2 + 200)
+    // Ilhas
+    const islandTex = AssetManager.getTexture('island')
+    const island1 = new Island(this.LOGICAL_WIDTH * 0.28, this.LOGICAL_HEIGHT * 0.35, 75, islandTex)
+    const island2 = new Island(this.LOGICAL_WIDTH * 0.72, this.LOGICAL_HEIGHT * 0.65, 75, islandTex)
+    
+    this.islands = [island1, island2]
+    this.islands.forEach(island => this.container.addChild(island.container))
+
+    // Navio do Jogador
+    const playerTex = AssetManager.getTexture('player')
+    this.player = new PlayerShip(this.LOGICAL_WIDTH / 2, this.LOGICAL_HEIGHT / 2 + 180, playerTex)
     this.container.addChild(this.player.container)
 
     this.app.ticker.add((ticker) => {
@@ -88,22 +110,35 @@ export class GameEngine {
 
     if (!this.player) return
 
-    this.player.update(delta, this.inputManager, bounds, (newProjectile) => {
-      this.projectiles.push(newProjectile)
-      this.container.addChild(newProjectile.container)
-    })
+    if (this.bgTile) {
+      this.bgTile.tilePosition.x -= 0.3 * delta
+      this.bgTile.tilePosition.y -= 0.15 * delta
+    }
 
-    if (this.island) {
+    const cannonTex = AssetManager.getTexture('cannonball')
+
+    this.player.update(
+      delta, 
+      this.inputManager, 
+      bounds, 
+      (newProjectile) => {
+        this.projectiles.push(newProjectile)
+        this.container.addChild(newProjectile.container)
+      },
+      cannonTex
+    )
+
+    for (const island of this.islands) {
       if (checkCircleCollision(
-        this.player.container.x, this.player.container.y, 20,
-        this.island.container.x, this.island.container.y, this.island.radius
+        this.player.container.x, this.player.container.y, 22,
+        island.container.x, island.container.y, island.radius
       )) {
         const angle = Math.atan2(
-          this.player.container.y - this.island.container.y,
-          this.player.container.x - this.island.container.x
+          this.player.container.y - island.container.y,
+          this.player.container.x - island.container.x
         )
-        this.player.container.x = this.island.container.x + Math.cos(angle) * (20 + this.island.radius + 2)
-        this.player.container.y = this.island.container.y + Math.sin(angle) * (20 + this.island.radius + 2)
+        this.player.container.x = island.container.x + Math.cos(angle) * (22 + island.radius + 2)
+        this.player.container.y = island.container.y + Math.sin(angle) * (22 + island.radius + 2)
       }
     }
 
@@ -115,26 +150,33 @@ export class GameEngine {
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i]
-      enemy.update(delta, { x: this.player.container.x, y: this.player.container.y }, (enemyProjectile) => {
-        this.projectiles.push(enemyProjectile)
-        this.container.addChild(enemyProjectile.container)
-      })
+      enemy.update(
+        delta, 
+        { x: this.player.container.x, y: this.player.container.y }, 
+        (enemyProjectile) => {
+          this.projectiles.push(enemyProjectile)
+          this.container.addChild(enemyProjectile.container)
+        },
+        cannonTex
+      )
 
-      if (this.island && checkCircleCollision(
-        enemy.container.x, enemy.container.y, enemy.radius,
-        this.island.container.x, this.island.container.y, this.island.radius
-      )) {
-        const angle = Math.atan2(
-          enemy.container.y - this.island.container.y,
-          enemy.container.x - this.island.container.x
-        )
-        enemy.container.x = this.island.container.x + Math.cos(angle) * (enemy.radius + this.island.radius + 2)
-        enemy.container.y = this.island.container.y + Math.sin(angle) * (enemy.radius + this.island.radius + 2)
+      for (const island of this.islands) {
+        if (checkCircleCollision(
+          enemy.container.x, enemy.container.y, enemy.radius,
+          island.container.x, island.container.y, island.radius
+        )) {
+          const angle = Math.atan2(
+            enemy.container.y - island.container.y,
+            enemy.container.x - island.container.x
+          )
+          enemy.container.x = island.container.x + Math.cos(angle) * (enemy.radius + island.radius + 2)
+          enemy.container.y = island.container.y + Math.sin(angle) * (enemy.radius + island.radius + 2)
+        }
       }
 
       if (enemy.type === 'chaser' && checkCircleCollision(
         enemy.container.x, enemy.container.y, enemy.radius,
-        this.player.container.x, this.player.container.y, 20
+        this.player.container.x, this.player.container.y, 22
       )) {
         this.player.takeDamage(20)
         this.callbacks.onHealthChange(this.player.hp)
@@ -155,11 +197,14 @@ export class GameEngine {
       const p = this.projectiles[i]
       p.update(delta, bounds)
 
-      if (this.island && checkCircleCollision(
-        p.container.x, p.container.y, 4,
-        this.island.container.x, this.island.container.y, this.island.radius
-      )) {
-        p.isDead = true
+      for (const island of this.islands) {
+        if (checkCircleCollision(
+          p.container.x, p.container.y, 4,
+          island.container.x, island.container.y, island.radius
+        )) {
+          p.isDead = true
+          break
+        }
       }
 
       if (!p.isEnemy) {
@@ -176,7 +221,7 @@ export class GameEngine {
           }
         }
       } else {
-        if (checkCircleCollision(p.container.x, p.container.y, 4, this.player.container.x, this.player.container.y, 20)) {
+        if (checkCircleCollision(p.container.x, p.container.y, 4, this.player.container.x, this.player.container.y, 22)) {
           p.isDead = true
           this.player.takeDamage(10)
           this.callbacks.onHealthChange(this.player.hp)
@@ -204,7 +249,9 @@ export class GameEngine {
     else { x = 20; y = Math.random() * this.LOGICAL_HEIGHT }
 
     const type: EnemyType = Math.random() > 0.4 ? 'chaser' : 'shooter'
-    const enemy = new Enemy(x, y, type)
+    const enemyTex = type === 'chaser' ? AssetManager.getTexture('chaser') : AssetManager.getTexture('shooter')
+
+    const enemy = new Enemy(x, y, type, enemyTex)
     this.enemies.push(enemy)
     this.container.addChild(enemy.container)
   }
@@ -217,10 +264,11 @@ export class GameEngine {
     this.isDestroyed = true
     this.inputManager.destroy()
     if (this.player) this.player.destroy()
-    if (this.island) this.island.destroy()
+    this.islands.forEach(island => island.destroy())
 
     this.projectiles.forEach(p => p.destroy())
     this.enemies.forEach(e => e.destroy())
+    this.islands = []
     this.projectiles = []
     this.enemies = []
 

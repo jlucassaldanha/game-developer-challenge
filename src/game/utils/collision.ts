@@ -5,5 +5,5 @@ export function checkCircleCollision(
   const dx = x1 - x2
   const dy = y1 - y2
   const distance = Math.hypot(dx, dy)
-  return distance < r1 + r2
+  return distance < (r1 + r2)
 }

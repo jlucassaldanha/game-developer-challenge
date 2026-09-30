@@ -45,20 +45,25 @@ export function App() {
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       {!gameOver.isOver && (
         <>
-          <GameCanvas
-            onHealthChange={setHp}
-            onScoreChange={setScore}
-            onGameOver={handleGameOver}
-            isPaused={isPaused}
-          />
-          <HUD
-            hp={hp}
-            maxHp={100}
-            score={score}
-            timeLeft={timeLeft}
-            isPaused={isPaused}
-            onTogglePause={() => setIsPaused((prev) => !prev)}
-          />
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}>
+            <GameCanvas
+              onHealthChange={setHp}
+              onScoreChange={setScore}
+              onGameOver={handleGameOver}
+              isPaused={isPaused}
+            />
+          </div>
+
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 10, pointerEvents: 'none' }}>
+            <HUD
+              hp={hp}
+              maxHp={100}
+              score={score}
+              timeLeft={timeLeft}
+              isPaused={isPaused}
+              onTogglePause={() => setIsPaused((prev) => !prev)}
+            />
+          </div>
         </>
       )}
 
@@ -82,6 +87,7 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     width: '100vw',
     height: '100vh',
+    zIndex: 20,
     backgroundColor: 'rgba(10, 25, 47, 0.95)',
     display: 'flex',
     flexDirection: 'column',
