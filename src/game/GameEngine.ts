@@ -2,6 +2,8 @@ import { Application, Container } from "pixi.js"
 import { InputManager } from "./systems/InputManager"
 import { PlayerShip } from "./entities/PlayerShip"
 import type { Projectile } from "./entities/Projectiles"
+import { Island } from "./entities/Island"
+import { checkCircleCollision } from "./utils/collision"
 
 export interface GameCallbacks {
   onHealthChange: (hp: number) => void
@@ -20,6 +22,7 @@ export class GameEngine {
   
   private inputManager: InputManager 
   private player?: PlayerShip
+  private island?: Island
   private projectiles: Projectile[] = []
 
   public readonly LOGICAL_WIDTH = 1280
@@ -59,7 +62,10 @@ export class GameEngine {
     element.appendChild(this.app.canvas)
     this.app.stage.addChild(this.container)
 
-    this.player = new PlayerShip(this.LOGICAL_WIDTH / 2, this.LOGICAL_HEIGHT / 2)
+    this.island = new Island(this.LOGICAL_WIDTH / 2, this.LOGICAL_HEIGHT / 2, 70)
+    this.container.addChild(this.island.container)
+
+    this.player = new PlayerShip(this.LOGICAL_WIDTH / 2, this.LOGICAL_HEIGHT / 2 + 200)
     this.container.addChild(this.player.container)
 
     this.app.ticker.add((ticker) => {
@@ -76,11 +82,35 @@ export class GameEngine {
         this.projectiles.push(newProjectile)
         this.container.addChild(newProjectile.container)
       }) 
+
+      if (this.island) {
+        const playerRadius = 20
+
+        if (checkCircleCollision(
+          this.player.container.x, this.player.container.y, playerRadius,
+          this.island.container.x, this.island.container.y, this.island.radius
+        )) {
+          const angle = Math.atan2(
+            this.player.container.y - this.island.container.y,
+            this.player.container.x - this.island.container.x
+          )
+          const overlap = (playerRadius + this.island.radius) + 2
+          this.player.container.x = this.island.container.x + Math.cos(angle) * overlap
+          this.player.container.y = this.island.container.y + Math.sin(angle) * overlap
+        }
+      }
     }
 
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i]
       p.update(delta, bounds)
+      
+      if (this.island && checkCircleCollision(
+        p.container.x, p.container.y, 4,
+        this.island.container.x, this.island.container.y, this.island.radius
+      )) {
+        p.isDead = true
+      }
 
       if (p.isDead) {
         p.destroy()
@@ -98,6 +128,7 @@ export class GameEngine {
     this.inputManager.destroy()
 
     if (this.player) this.player.destroy()
+    if (this.island) this.island.destroy()
 
     this.projectiles.forEach(p => p.destroy())
     this.projectiles = []
