@@ -7,6 +7,7 @@ interface HUDProps {
   timeLeft: number
   isPaused: boolean
   onTogglePause: () => void
+  captainName?: string
 }
 
 export const HUD: React.FC<HUDProps> = ({
@@ -16,74 +17,133 @@ export const HUD: React.FC<HUDProps> = ({
   timeLeft,
   isPaused,
   onTogglePause,
+  captainName = 'Capitão',
 }) => {
   const hpPercentage = Math.max(0, Math.min(100, (hp / maxHp) * 100))
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  // Define as cores dinâmicas da barra de vida
+  const getHpColor = () => {
+    if (hpPercentage > 50) return '#2ec4b6' // Verde/Soroa
+    if (hpPercentage > 25) return '#ff9f1c' // Laranja
+    return '#e71d36' // Vermelho crítico
+  }
+
+  // Tratador para fallbacks de imagem caso o caminho exato varie no ambiente local
+  const handleImgError = (e: React.SyntheticEvent<HTMLImageElement, Event>, fallbackSrc: string) => {
+    const target = e.currentTarget
+    if (target.src !== fallbackSrc && !target.dataset.triedFallback) {
+      target.dataset.triedFallback = 'true'
+      target.src = fallbackSrc
+    } else {
+      target.style.display = 'none'
+    }
   }
 
   return (
-    <div style={styles.overlay}>
+    <div style={styles.hudOverlay}>
+      {/* PAINEL SUPERIOR - STATUS E RECURSOS */}
       <div style={styles.topBar}>
-        {/* HP Bar */}
-        <div style={styles.hpContainer}>
-          <div style={styles.labelRow}>
-            <span style={styles.icon}>⚓</span>
-            <span style={styles.label}>Casco: {hp}/{maxHp}</span>
+        {/* NOME DO CAPITÃO E VIDA */}
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <img
+              src="/assets/png/default/ui/hud/icon_heart.png"
+              alt="HP Icon"
+              style={styles.icon}
+              onError={(e) => handleImgError(e, '/assets/ui/icon_health.png')}
+            />
+            <span style={styles.captainLabel}>{captainName}</span>
           </div>
           <div style={styles.hpBarBackground}>
             <div
               style={{
                 ...styles.hpBarFill,
                 width: `${hpPercentage}%`,
-                backgroundColor: hpPercentage > 50 ? '#2a9d8f' : hpPercentage > 25 ? '#e9c46a' : '#e63946',
+                backgroundColor: getHpColor(),
               }}
             />
+            <span style={styles.hpText}>
+              {hp} / {maxHp}
+            </span>
           </div>
         </div>
 
-        {/* Cronômetro */}
-        <div style={styles.statBox}>
-          <span style={styles.icon}>⌛</span>
-          <div style={styles.statTextGroup}>
-            <span style={styles.label}>Tempo</span>
-            <span style={styles.timerText}>{formatTime(timeLeft)}</span>
+        {/* CRONÔMETRO */}
+        <div style={styles.cardCenter}>
+          <img
+            src="/assets/png/default/ui/hud/icon_time.png"
+            alt="Timer Icon"
+            style={styles.iconLarge}
+            onError={(e) => handleImgError(e, '/assets/ui/icon_timer.png')}
+          />
+          <div style={styles.timeValue}>
+            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
           </div>
         </div>
 
-        {/* Pontuação */}
-        <div style={styles.statBox}>
-          <span style={styles.icon}>☠️</span>
-          <div style={styles.statTextGroup}>
-            <span style={styles.label}>Pontos</span>
-            <span style={styles.scoreText}>{score}</span>
+        {/* PONTUAÇÃO / INIMIGOS AFUNDADOS */}
+        <div style={styles.card}>
+          <div style={styles.cardHeaderRight}>
+            <span style={styles.scoreLabel}>Inimigos Afundados</span>
+            <img
+              src="/assets/png/default/ui/hud/icon_score.png"
+              alt="Score Icon"
+              style={styles.icon}
+              onError={(e) => handleImgError(e, '/assets/png/default/effects/cannonball.png')}
+            />
           </div>
+          <div style={styles.scoreValue}>{score}</div>
         </div>
-
-        {/* Botão de Pausa */}
-        <button style={styles.pauseButton} onClick={onTogglePause}>
-          {isPaused ? '▶ Continuar' : '❚❚ Pausar'}
-        </button>
       </div>
 
-      {isPaused && (
-        <div style={styles.pauseModal}>
-          <h2 style={styles.modalTitle}>🏴‍☠️ Jogo Pausado</h2>
-          <p style={styles.modalText}>Descanse as velas, capitão!</p>
-          <button style={styles.resumeButton} onClick={onTogglePause}>
-            Voltar à Batalha
+      {/* CONTROLES / LEGENDA DE DISPAROS DE CANHÃO (RODAPÉ) */}
+      <div style={styles.bottomBar}>
+        <div style={styles.controlsContainer}>
+          {/* BORDADA ESQUERDA */}
+          <div style={styles.controlBox}>
+            <span style={styles.keyBadge}>Q</span>
+            <div style={styles.controlTextGroup}>
+              <span style={styles.controlTitle}>Bordada Esquerda</span>
+              <span style={styles.controlSub}>3 Canhões</span>
+            </div>
+          </div>
+
+          {/* TIRO FRONTAL */}
+          <div style={styles.controlBoxPrimary}>
+            <span style={styles.keyBadgePrimary}>ESPAÇO</span>
+            <div style={styles.controlTextGroup}>
+              <span style={styles.controlTitle}>Canhão Frontal</span>
+              <span style={styles.controlSub}>Disparo Direto</span>
+            </div>
+          </div>
+
+          {/* BORDADA DIREITA */}
+          <div style={styles.controlBox}>
+            <span style={styles.keyBadge}>E</span>
+            <div style={styles.controlTextGroup}>
+              <span style={styles.controlTitle}>Bordada Direita</span>
+              <span style={styles.controlSub}>3 Canhões</span>
+            </div>
+          </div>
+
+          {/* BOTÃO PAUSAR */}
+          <button style={styles.pauseButton} onClick={onTogglePause}>
+            <img
+              src="/assets/png/default/ui/controls/icon_pause.png"
+              alt="Pause"
+              style={styles.pauseIcon}
+              onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+            {isPaused ? 'CONTINUAR' : 'PAUSAR'}
           </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  overlay: {
+  hudOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -93,129 +153,189 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
+    padding: '20px',
     boxSizing: 'border-box',
-    padding: '16px',
-    fontFamily: "'Trebuchet MS', 'Lucida Sans Unicode', sans-serif",
-    userSelect: 'none',
+    fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
   },
   topBar: {
-    pointerEvents: 'auto',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    background: 'linear-gradient(180deg, rgba(35, 23, 13, 0.92) 0%, rgba(18, 12, 7, 0.95) 100%)',
-    border: '3px solid #c9a050',
-    borderRadius: '12px',
-    padding: '12px 24px',
-    color: '#f4e8c1',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(201, 160, 80, 0.2)',
+    alignItems: 'flex-start',
+    width: '100%',
   },
-  hpContainer: {
+  card: {
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    border: '2px solid #b89756',
+    borderRadius: '10px',
+    padding: '12px 18px',
+    minWidth: '220px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+    backdropFilter: 'blur(4px)',
+    pointerEvents: 'auto',
+  },
+  cardHeader: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    width: '200px',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '8px',
   },
-  labelRow: {
+  cardHeaderRight: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
+    justifyContent: 'flex-end',
+    gap: '8px',
+    marginBottom: '4px',
   },
-  icon: {
-    fontSize: '20px',
-  },
-  label: {
-    fontSize: '12px',
+  captainLabel: {
+    color: '#f1f5f9',
+    fontWeight: 'bold',
+    fontSize: '15px',
     textTransform: 'uppercase',
     letterSpacing: '1px',
-    color: '#d4af37',
+  },
+  scoreLabel: {
+    color: '#94a3b8',
+    fontSize: '12px',
+    textTransform: 'uppercase',
     fontWeight: 'bold',
   },
+  icon: {
+    width: '22px',
+    height: '22px',
+    objectFit: 'contain',
+  },
+  iconLarge: {
+    width: '28px',
+    height: '28px',
+    objectFit: 'contain',
+    marginBottom: '4px',
+  },
   hpBarBackground: {
+    position: 'relative',
     width: '100%',
-    height: '18px',
-    backgroundColor: '#120c06',
-    borderRadius: '9px',
+    height: '20px',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: '10px',
     overflow: 'hidden',
-    border: '2px solid #8b5a2b',
-    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.8)',
+    border: '1px solid #475569',
   },
   hpBarFill: {
     height: '100%',
-    transition: 'width 0.2s ease-out, background-color 0.2s ease',
-    borderRadius: '6px',
+    transition: 'width 0.3s ease, background-color 0.3s ease',
   },
-  statBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    background: 'rgba(0, 0, 0, 0.3)',
-    padding: '6px 16px',
-    borderRadius: '8px',
-    border: '1px solid rgba(201, 160, 80, 0.4)',
-  },
-  statTextGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  timerText: {
-    fontSize: '22px',
-    fontWeight: 'bold',
-    color: '#e9c46a',
-    textShadow: '0 2px 4px rgba(0,0,0,0.8)',
-  },
-  scoreText: {
-    fontSize: '22px',
-    fontWeight: 'bold',
-    color: '#4cc9f0',
-    textShadow: '0 2px 4px rgba(0,0,0,0.8)',
-  },
-  pauseButton: {
-    background: 'linear-gradient(180deg, #d4a359 0%, #8b5a2b 100%)',
-    color: '#2b1808',
-    border: '2px solid #f4e8c1',
-    padding: '10px 20px',
-    borderRadius: '8px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '14px',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.4)',
-    textTransform: 'uppercase',
-  },
-  pauseModal: {
-    pointerEvents: 'auto',
+  hpText: {
     position: 'absolute',
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    background: 'linear-gradient(180deg, rgba(35, 23, 13, 0.96) 0%, rgba(18, 12, 7, 0.98) 100%)',
-    border: '4px solid #c9a050',
-    padding: '36px 52px',
-    borderRadius: '16px',
-    textAlign: 'center',
-    color: '#f4e8c1',
-    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(201, 160, 80, 0.3)',
-  },
-  modalTitle: {
-    fontSize: '28px',
-    color: '#e9c46a',
-    marginBottom: '8px',
-  },
-  modalText: {
-    fontSize: '16px',
-    color: '#c4b272',
-    marginBottom: '20px',
-  },
-  resumeButton: {
-    backgroundColor: '#2a9d8f',
     color: '#ffffff',
-    border: '2px solid #ffffff',
-    padding: '12px 28px',
-    borderRadius: '8px',
+    fontSize: '11px',
     fontWeight: 'bold',
-    fontSize: '16px',
+    textShadow: '1px 1px 2px #000',
+  },
+  cardCenter: {
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    border: '2px solid #b89756',
+    borderRadius: '10px',
+    padding: '10px 24px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+    backdropFilter: 'blur(4px)',
+    pointerEvents: 'auto',
+  },
+  timeValue: {
+    fontSize: '26px',
+    fontWeight: 'bold',
+    color: '#f59e0b',
+    letterSpacing: '2px',
+  },
+  scoreValue: {
+    fontSize: '28px',
+    fontWeight: 'bold',
+    color: '#38bdf8',
+    textAlign: 'right',
+  },
+  bottomBar: {
+    display: 'flex',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  controlsContainer: {
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    border: '2px solid #b89756',
+    borderRadius: '12px',
+    padding: '10px 20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px',
+    boxShadow: '0 6px 16px rgba(0,0,0,0.6)',
+    pointerEvents: 'auto',
+  },
+  controlBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  controlBoxPrimary: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '0 10px',
+    borderLeft: '1px solid #334155',
+    borderRight: '1px solid #334155',
+  },
+  keyBadge: {
+    backgroundColor: '#334155',
+    color: '#f8fafc',
+    fontWeight: 'bold',
+    fontSize: '14px',
+    padding: '6px 12px',
+    borderRadius: '6px',
+    border: '1px solid #64748b',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+  },
+  keyBadgePrimary: {
+    backgroundColor: '#b89756',
+    color: '#0f172a',
+    fontWeight: 'bold',
+    fontSize: '13px',
+    padding: '6px 14px',
+    borderRadius: '6px',
+    border: '1px solid #f59e0b',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
+  },
+  controlTextGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  controlTitle: {
+    color: '#f1f5f9',
+    fontSize: '12px',
+    fontWeight: 'bold',
+  },
+  controlSub: {
+    color: '#94a3b8',
+    fontSize: '10px',
+  },
+  pauseButton: {
+    backgroundColor: '#dc2626',
+    color: '#ffffff',
+    border: 'none',
+    padding: '10px 18px',
+    borderRadius: '6px',
+    fontWeight: 'bold',
+    fontSize: '13px',
     cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'background-color 0.2s ease',
+  },
+  pauseIcon: {
+    width: '14px',
+    height: '14px',
+    objectFit: 'contain',
   },
 }

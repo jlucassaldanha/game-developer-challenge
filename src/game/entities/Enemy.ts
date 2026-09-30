@@ -5,50 +5,41 @@ export type EnemyType = 'chaser' | 'shooter'
 
 export class Enemy {
   public container: Container
-  private sprite: Sprite | Graphics
-  private healthBar: Graphics
   public type: EnemyType
-
-  public hp: number
-  public maxHp: number
+  public radius = 22
+  public hp = 40
+  public maxHp = 40
   public isDead = false
-  public radius = 20
 
-  private speed: number
+  private speed = 2.0
   private shootCooldown = 0
+  private healthBar: Graphics
 
-  constructor(x: number, y: number, type: EnemyType = 'chaser', texture?: Texture) {
+  constructor(x: number, y: number, type: EnemyType, texture?: Texture) {
     this.container = new Container()
     this.container.x = x
     this.container.y = y
     this.type = type
 
-    if (type === 'chaser') {
-      this.hp = 30
-      this.maxHp = 30
-      this.speed = 2.2
-    } else {
-      this.hp = 50
-      this.maxHp = 50
+    if (this.type === 'shooter') {
       this.speed = 1.4
+      this.hp = 60
+      this.maxHp = 60
     }
 
-    if (texture && texture instanceof Texture) {
+    if (texture) {
       const s = new Sprite(texture)
       s.anchor.set(0.5)
-      // Ajusta orientação: os sprites de navios apontam para CIMA por padrão
-      // Adicionando PI/2 (90 deg), alinhamos com a direção de movimento 0 (DIREITA)
+      const aspect = s.texture.width / (s.texture.height || 1)
+      s.height = 42
+      s.width = 42 * aspect
       s.rotation = Math.PI / 2
-      s.width = 40
-      s.height = 30
-      this.sprite = s
       this.container.addChild(s)
     } else {
-      this.sprite = new Graphics()
-        .rect(-15, -10, 30, 20)
-        .fill(type === 'chaser' ? 0xf4a261 : 0x9d4edd)
-        .stroke({ width: 2, color: 0xffffff })
-      this.container.addChild(this.sprite)
+      const g = new Graphics()
+      const color = this.type === 'chaser' ? 0xd90429 : 0xf77f00
+      g.circle(0, 0, this.radius).fill(color)
+      this.container.addChild(g)
     }
 
     this.healthBar = new Graphics()
@@ -58,51 +49,47 @@ export class Enemy {
 
   public updateHealthBar() {
     this.healthBar.clear()
-
-    const barWidth = 34
-    const barHeight = 5
+    const barWidth = 32
+    const barHeight = 4
     const barX = -barWidth / 2
     const barY = -28
 
-    this.healthBar.rect(barX, barY, barWidth, barHeight).fill(0x1b2a4a).stroke({ width: 1, color: 0x000000 })
-
-    const pct = Math.max(0, Math.min(1, this.hp / this.maxHp))
-    const fillWidth = barWidth * pct
-    const fillColor = pct > 0.5 ? 0x2a9d8f : pct > 0.25 ? 0xe9c46a : 0xe63946
-
-    if (fillWidth > 0) {
-      this.healthBar.rect(barX, barY, fillWidth, barHeight).fill(fillColor)
+    this.healthBar.rect(barX, barY, barWidth, barHeight).fill(0x0f172a)
+    const pct = Math.max(0, this.hp / this.maxHp)
+    if (pct > 0) {
+      this.healthBar.rect(barX, barY, barWidth * pct, barHeight).fill(0xe63946)
     }
   }
 
   public update(
     delta: number,
     playerPos: { x: number; y: number },
-    onEnemyShoot: (p: Projectile) => void,
+    onShoot: (projectile: Projectile) => void,
     projectileTexture?: Texture
   ) {
     if (this.isDead) return
 
     const dx = playerPos.x - this.container.x
     const dy = playerPos.y - this.container.y
-    const distanceToPlayer = Math.hypot(dx, dy)
-    const angleToPlayer = Math.atan2(dy, dx)
+    const angle = Math.atan2(dy, dx)
 
-    this.container.rotation = angleToPlayer
+    this.container.rotation = angle
+
+    const dist = Math.sqrt(dx * dx + dy * dy)
 
     if (this.type === 'chaser') {
-      this.container.x += Math.cos(angleToPlayer) * this.speed * delta
-      this.container.y += Math.sin(angleToPlayer) * this.speed * delta
+      this.container.x += Math.cos(angle) * this.speed * delta
+      this.container.y += Math.sin(angle) * this.speed * delta
     } else if (this.type === 'shooter') {
-      if (distanceToPlayer > 220) {
-        this.container.x += Math.cos(angleToPlayer) * this.speed * delta
-        this.container.y += Math.sin(angleToPlayer) * this.speed * delta
+      if (dist > 220) {
+        this.container.x += Math.cos(angle) * this.speed * delta
+        this.container.y += Math.sin(angle) * this.speed * delta
       }
 
-      if (this.shootCooldown > 0) this.shootCooldown -= delta
-      if (distanceToPlayer <= 320 && this.shootCooldown <= 0) {
+      this.shootCooldown -= delta
+      if (this.shootCooldown <= 0 && dist < 450) {
         this.shootCooldown = 90
-        onEnemyShoot(new Projectile(this.container.x, this.container.y, angleToPlayer, true, projectileTexture))
+        onShoot(new Projectile(this.container.x, this.container.y, angle, true, projectileTexture))
       }
     }
   }
@@ -111,7 +98,6 @@ export class Enemy {
     this.hp -= amount
     this.updateHealthBar()
     if (this.hp <= 0) {
-      this.hp = 0
       this.isDead = true
     }
   }

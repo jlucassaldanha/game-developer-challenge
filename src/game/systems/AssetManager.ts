@@ -11,7 +11,6 @@ export class AssetManager {
         this.uiSpritesheet = sheet
       }
     } catch {
-      // Fallback
     }
 
     const candidates: Record<string, string[]> = {
@@ -40,18 +39,23 @@ export class AssetManager {
         '/assets/tiles/island.png',
         '/assets/island.png'
       ],
+      cannonball: [
+        '/assets/png/default/ship_parts/cannon_ball.png',
+        '/assets/png/retina/ship_parts/cannon_ball.png',
+        '/assets/effects/cannonball.png',
+        '/assets/cannonball.png'
+      ],
+      explosion: [
+        '/assets/png/default/effects/explosion_1.png',
+        '/assets/png/default/effects/explosion_2.png',
+        '/assets/png/retina/effects/explosion.png',
+        '/assets/effects/explosion.png'
+      ],
       water: [
         '/assets/png/default/tiles/tile_73.png',
         '/assets/png/default/tiles/tile_72.png',
         '/assets/png/retina/tiles/tile_73.png',
-        '/assets/tiles/water.png',
-        '/assets/water.png'
-      ],
-      cannonball: [
-        '/assets/png/default/effects/cannonball.png',
-        '/assets/png/retina/effects/cannonball.png',
-        '/assets/effects/cannonball.png',
-        '/assets/cannonball.png'
+        '/assets/tiles/water.png'
       ]
     }
 
@@ -64,7 +68,6 @@ export class AssetManager {
             break
           }
         } catch {
-          // Tenta próximo
         }
       }
     }

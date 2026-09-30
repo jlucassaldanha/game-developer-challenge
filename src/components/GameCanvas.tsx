@@ -29,7 +29,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     engineRef.current = engine
     engine.init(container).catch((err) => {
-      console.error("Falha ao inicializar o Canvas:", err)
+      console.error('Falha ao inicializar o Canvas do jogo:', err)
     })
 
     return () => {

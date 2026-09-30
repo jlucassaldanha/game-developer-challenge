@@ -1,24 +1,29 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { GameCanvas } from './components/GameCanvas'
 import { HUD } from './components/HUD'
+import { StartMenu } from './components/StartMenu'
+import { GameOverMenu } from './components/GameOverMenu'
 
 export function App() {
+  const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover'>('menu')
+  const [captainName, setCaptainName] = useState('')
+
   const [hp, setHp] = useState(100)
   const [score, setScore] = useState(0)
   const [timeLeft, setTimeLeft] = useState(60)
   const [isPaused, setIsPaused] = useState(false)
-  const [gameOver, setGameOver] = useState<{ isOver: boolean; reason?: 'time' | 'death' }>({
-    isOver: false,
-  })
+  const [gameOverReason, setGameOverReason] = useState<'time' | 'death'>('time')
 
+  // Cronômetro da partida
   useEffect(() => {
-    if (isPaused || gameOver.isOver) return
+    if (gameState !== 'playing' || isPaused) return
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer)
-          setGameOver({ isOver: true, reason: 'time' })
+          setGameOverReason('time')
+          setGameState('gameover')
           return 0
         }
         return prev - 1
@@ -26,11 +31,21 @@ export function App() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [isPaused, gameOver.isOver])
+  }, [gameState, isPaused])
+
+  const handleStartGame = (name: string) => {
+    setCaptainName(name)
+    setHp(100)
+    setScore(0)
+    setTimeLeft(60)
+    setIsPaused(false)
+    setGameState('playing')
+  }
 
   const handleGameOver = (finalScore: number, reason: 'time' | 'death') => {
     setScore(finalScore)
-    setGameOver({ isOver: true, reason })
+    setGameOverReason(reason)
+    setGameState('gameover')
   }
 
   const handleRestart = () => {
@@ -38,12 +53,16 @@ export function App() {
     setScore(0)
     setTimeLeft(60)
     setIsPaused(false)
-    setGameOver({ isOver: false })
+    setGameState('playing')
   }
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      {!gameOver.isOver && (
+      {/* MENU INICIAL */}
+      {gameState === 'menu' && <StartMenu onStartGame={handleStartGame} />}
+
+      {/* JOGO ATIVO & HUD */}
+      {gameState === 'playing' && (
         <>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}>
             <GameCanvas
@@ -62,55 +81,23 @@ export function App() {
               timeLeft={timeLeft}
               isPaused={isPaused}
               onTogglePause={() => setIsPaused((prev) => !prev)}
+              captainName={captainName}
             />
           </div>
         </>
       )}
 
-      {gameOver.isOver && (
-        <div style={styles.gameOverScreen}>
-          <h1>{gameOver.reason === 'death' ? 'Seu Navio Foi Afundado!' : 'Tempo Esgotado!'}</h1>
-          <p style={styles.finalScore}>Pontuação Final: {score}</p>
-          <button style={styles.restartButton} onClick={handleRestart}>
-            Jogar Novamente
-          </button>
-        </div>
+      {/* TELA DE GAME OVER */}
+      {gameState === 'gameover' && (
+        <GameOverMenu
+          score={score}
+          reason={gameOverReason}
+          captainName={captainName}
+          onRestart={handleRestart}
+        />
       )}
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  gameOverScreen: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    zIndex: 20,
-    backgroundColor: 'rgba(10, 25, 47, 0.95)',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: '#ffffff',
-    fontFamily: 'sans-serif',
-  },
-  finalScore: {
-    fontSize: '28px',
-    color: '#e9c46a',
-    margin: '20px 0',
-  },
-  restartButton: {
-    backgroundColor: '#2a9d8f',
-    color: '#ffffff',
-    border: 'none',
-    padding: '14px 28px',
-    borderRadius: '8px',
-    fontWeight: 'bold',
-    fontSize: '18px',
-    cursor: 'pointer',
-  },
 }
 
 export default App

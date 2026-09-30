@@ -14,7 +14,8 @@ export class PlayerShip {
   private rotationSpeed = 0.04
 
   private frontShootCooldown = 0
-  private sideShootCooldown = 0
+  private leftShootCooldown = 0
+  private rightShootCooldown = 0
 
   public hp = 100
   public maxHp = 100
@@ -24,14 +25,13 @@ export class PlayerShip {
     this.container.x = x
     this.container.y = y
 
-    if (texture && texture instanceof Texture) {
+    if (texture) {
       const s = new Sprite(texture)
       s.anchor.set(0.5)
-      // Ajusta orientação: os sprites de navios apontam para CIMA por padrão
-      // Adicionando PI/2 (90 deg), alinhamos com a direção de movimento 0 (DIREITA)
+      const aspect = s.texture.width / (s.texture.height || 1)
+      s.height = 48
+      s.width = 48 * aspect
       s.rotation = Math.PI / 2
-      s.width = 44
-      s.height = 34
       this.sprite = s
       this.container.addChild(s)
     } else {
@@ -55,7 +55,7 @@ export class PlayerShip {
     const barX = -barWidth / 2
     const barY = -32
 
-    this.healthBar.rect(barX, barY, barWidth, barHeight).fill(0x1b2a4a).stroke({ width: 1, color: 0x000000 })
+    this.healthBar.rect(barX, barY, barWidth, barHeight).fill(0x0f172a).stroke({ width: 1, color: 0x000000 })
 
     const pct = Math.max(0, Math.min(1, this.hp / this.maxHp))
     const fillWidth = barWidth * pct
@@ -74,7 +74,8 @@ export class PlayerShip {
     projectileTexture?: Texture
   ) {
     if (this.frontShootCooldown > 0) this.frontShootCooldown -= delta
-    if (this.sideShootCooldown > 0) this.sideShootCooldown -= delta
+    if (this.leftShootCooldown > 0) this.leftShootCooldown -= delta
+    if (this.rightShootCooldown > 0) this.rightShootCooldown -= delta
 
     if (input.isKeyDown('KeyA') || input.isKeyDown('ArrowLeft')) {
       this.container.rotation -= this.rotationSpeed * delta
@@ -99,23 +100,27 @@ export class PlayerShip {
     this.container.x = Math.max(30, Math.min(bounds.width - 30, this.container.x))
     this.container.y = Math.max(30, Math.min(bounds.height - 30, this.container.y))
 
+    // Disparo Frontal (ESPAÇO)
     if (input.isKeyDown('Space') && this.frontShootCooldown <= 0) {
       this.frontShootCooldown = 15
-      const p = new Projectile(this.container.x, this.container.y, this.container.rotation, false, projectileTexture)
-      onShoot(p)
+      onShoot(new Projectile(this.container.x, this.container.y, this.container.rotation, false, projectileTexture))
     }
 
-    if ((input.isKeyDown('ShiftLeft') || input.isKeyDown('ShiftRight')) && this.sideShootCooldown <= 0) {
-      this.sideShootCooldown = 45
-      
+    // Disparo Bordo Esquerdo (Tecla Q)
+    if (input.isKeyDown('KeyQ') && this.leftShootCooldown <= 0) {
+      this.leftShootCooldown = 35
       const leftAngle = this.container.rotation - Math.PI / 2
+      const angles = [leftAngle - 0.2, leftAngle, leftAngle + 0.2]
+      angles.forEach(angle => {
+        onShoot(new Projectile(this.container.x, this.container.y, angle, false, projectileTexture))
+      })
+    }
+
+    // Disparo Bordo Direito (Tecla E)
+    if (input.isKeyDown('KeyE') && this.rightShootCooldown <= 0) {
+      this.rightShootCooldown = 35
       const rightAngle = this.container.rotation + Math.PI / 2
-
-      const angles = [
-        leftAngle - 0.2, leftAngle, leftAngle + 0.2,
-        rightAngle - 0.2, rightAngle, rightAngle + 0.2
-      ]
-
+      const angles = [rightAngle - 0.2, rightAngle, rightAngle + 0.2]
       angles.forEach(angle => {
         onShoot(new Projectile(this.container.x, this.container.y, angle, false, projectileTexture))
       })
