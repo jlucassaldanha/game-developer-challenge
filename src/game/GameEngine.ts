@@ -1,6 +1,7 @@
 import { Application, Container } from "pixi.js"
 import { InputManager } from "./systems/InputManager"
 import { PlayerShip } from "./entities/PlayerShip"
+import type { Projectile } from "./entities/Projectiles"
 
 export interface GameCallbacks {
   onHealthChange: (hp: number) => void
@@ -18,7 +19,8 @@ export class GameEngine {
   private isDestroyed = false
   
   private inputManager: InputManager 
-  private player!: PlayerShip
+  private player?: PlayerShip
+  private projectiles: Projectile[] = []
 
   public readonly LOGICAL_WIDTH = 1280
   public readonly LOGICAL_HEIGHT = 720
@@ -44,10 +46,10 @@ export class GameEngine {
       return 
     }
 
-    const scale = Math.min(
+    const scale = Math.max(0.1, Math.min(
       window.innerWidth / this.LOGICAL_WIDTH,
       window.innerHeight / this.LOGICAL_HEIGHT
-    )
+    ))
 
     this.container.scale.set(scale)
 
@@ -67,11 +69,23 @@ export class GameEngine {
   }
 
   private update(delta: number) {
+    const bounds = { width: this.LOGICAL_WIDTH, height: this.LOGICAL_HEIGHT }
+
     if (this.player) { 
-      this.player.update(delta, this.inputManager, { 
-        width: this.LOGICAL_WIDTH, 
-        height: this.LOGICAL_HEIGHT, 
+      this.player.update(delta, this.inputManager, bounds, (newProjectile) => {
+        this.projectiles.push(newProjectile)
+        this.container.addChild(newProjectile.container)
       }) 
+    }
+
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      const p = this.projectiles[i]
+      p.update(delta, bounds)
+
+      if (p.isDead) {
+        p.destroy()
+        this.projectiles.splice(i, 1)
+      }
     }
   }
 
@@ -82,8 +96,11 @@ export class GameEngine {
   public destroy() {
     this.isDestroyed = true 
     this.inputManager.destroy()
-    
+
     if (this.player) this.player.destroy()
+
+    this.projectiles.forEach(p => p.destroy())
+    this.projectiles = []
 
     if (this.isInitialized) { 
       this.app.destroy(true, { children: true, texture: true }) 
