@@ -5,6 +5,7 @@ import { Projectile } from './Projectile'
 export class PlayerShip {
   public container: Container
   private sprite: Graphics
+  private healthBar: Graphics
   
   private speed = 0
   private maxSpeed = 4
@@ -29,6 +30,29 @@ export class PlayerShip {
       .stroke({ width: 2, color: 0xffffff })
 
     this.container.addChild(this.sprite)
+
+    this.healthBar = new Graphics()
+    this.container.addChild(this.healthBar)
+    this.updateHealthBar()
+  }
+
+  public updateHealthBar() {
+    this.healthBar.clear()
+    
+    const barWidth = 36
+    const barHeight = 5
+    const barX = -barWidth / 2
+    const barY = -25
+
+    this.healthBar.rect(barX, barY, barWidth, barHeight).fill(0x1b2a4a).stroke({ width: 1, color: 0x000000 })
+
+    const pct = Math.max(0, Math.min(1, this.hp / this.maxHp))
+    const fillWidth = barWidth * pct
+    const fillColor = pct > 0.5 ? 0x2a9d8f : pct > 0.25 ? 0xe9c46a : 0xe63946
+
+    if (fillWidth > 0) {
+      this.healthBar.rect(barX, barY, fillWidth, barHeight).fill(fillColor)
+    }
   }
 
   public update(
@@ -84,6 +108,11 @@ export class PlayerShip {
         onShoot(new Projectile(this.container.x, this.container.y, angle))
       })
     }
+  }
+
+  public takeDamage(amount: number) {
+    this.hp = Math.max(0, this.hp - amount)
+    this.updateHealthBar()
   }
 
   public destroy() {

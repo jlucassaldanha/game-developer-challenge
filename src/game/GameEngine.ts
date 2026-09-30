@@ -1,10 +1,10 @@
 import { Application, Container } from "pixi.js"
 import { InputManager } from "./systems/InputManager"
 import { PlayerShip } from "./entities/PlayerShip"
-import type { Projectile } from "./entities/Projectile"
+import { Projectile } from "./entities/Projectile"
 import { Island } from "./entities/Island"
-import { checkCircleCollision } from "./utils/collision"
 import { Enemy, type EnemyType } from "./entities/Enemy"
+import { checkCircleCollision } from "./utils/collision"
 
 export interface GameCallbacks {
   onHealthChange: (hp: number) => void
@@ -17,11 +17,11 @@ export class GameEngine {
   private container: Container
   private callbacks: GameCallbacks
   private isPaused: boolean = false
-
-  private isInitialized = false 
-  private isDestroyed = false
   
-  private inputManager: InputManager 
+  private isInitialized = false
+  private isDestroyed = false
+
+  private inputManager: InputManager
   private player?: PlayerShip
   private island?: Island
   private projectiles: Projectile[] = []
@@ -42,7 +42,6 @@ export class GameEngine {
   }
 
   async init(element: HTMLDivElement) {
-    // Tela deve adaptar
     await this.app.init({
       resizeTo: window,
       backgroundColor: 0x1d3557,
@@ -50,20 +49,22 @@ export class GameEngine {
       autoDensity: true
     })
 
-    if (this.isDestroyed) { 
-      this.app.destroy(true, { children: true, texture: true }) 
-      return 
+    if (this.isDestroyed) {
+      this.app.destroy(true, { children: true, texture: true })
+      return
     }
 
+    const windowWidth = window.innerWidth || 1280
+    const windowHeight = window.innerHeight || 720
+
     const scale = Math.max(0.1, Math.min(
-      window.innerWidth / this.LOGICAL_WIDTH,
-      window.innerHeight / this.LOGICAL_HEIGHT
+      windowWidth / this.LOGICAL_WIDTH,
+      windowHeight / this.LOGICAL_HEIGHT
     ))
 
     this.container.scale.set(scale)
-
-    this.container.x = (window.innerWidth - this.LOGICAL_WIDTH * scale) / 2
-    this.container.y = (window.innerHeight - this.LOGICAL_HEIGHT * scale) / 2
+    this.container.x = (windowWidth - this.LOGICAL_WIDTH * scale) / 2
+    this.container.y = (windowHeight - this.LOGICAL_HEIGHT * scale) / 2
 
     element.appendChild(this.app.canvas)
     this.app.stage.addChild(this.container)
@@ -135,7 +136,7 @@ export class GameEngine {
         enemy.container.x, enemy.container.y, enemy.radius,
         this.player.container.x, this.player.container.y, 20
       )) {
-        this.player.hp -= 20
+        this.player.takeDamage(20)
         this.callbacks.onHealthChange(this.player.hp)
         enemy.isDead = true
 
@@ -177,7 +178,7 @@ export class GameEngine {
       } else {
         if (checkCircleCollision(p.container.x, p.container.y, 4, this.player.container.x, this.player.container.y, 20)) {
           p.isDead = true
-          this.player.hp -= 10
+          this.player.takeDamage(10)
           this.callbacks.onHealthChange(this.player.hp)
 
           if (this.player.hp <= 0) {
@@ -213,17 +214,18 @@ export class GameEngine {
   }
 
   public destroy() {
-    this.isDestroyed = true 
+    this.isDestroyed = true
     this.inputManager.destroy()
-
     if (this.player) this.player.destroy()
     if (this.island) this.island.destroy()
 
     this.projectiles.forEach(p => p.destroy())
+    this.enemies.forEach(e => e.destroy())
     this.projectiles = []
+    this.enemies = []
 
-    if (this.isInitialized) { 
-      this.app.destroy(true, { children: true, texture: true }) 
+    if (this.isInitialized) {
+      this.app.destroy(true, { children: true, texture: true })
     }
   }
 }

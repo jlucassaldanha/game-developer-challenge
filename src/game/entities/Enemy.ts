@@ -6,6 +6,7 @@ export type EnemyType = 'chaser' | 'shooter'
 export class Enemy {
   public container: Container
   private sprite: Graphics
+  private healthBar: Graphics
   public type: EnemyType
 
   public hp: number
@@ -38,6 +39,29 @@ export class Enemy {
       .stroke({ width: 2, color: 0xffffff })
 
     this.container.addChild(this.sprite)
+
+    this.healthBar = new Graphics()
+    this.container.addChild(this.healthBar)
+    this.updateHealthBar()
+  }
+
+  public updateHealthBar() {
+    this.healthBar.clear()
+
+    const barWidth = 30
+    const barHeight = 4
+    const barX = -barWidth / 2
+    const barY = -22
+
+    this.healthBar.rect(barX, barY, barWidth, barHeight).fill(0x1b2a4a).stroke({ width: 1, color: 0x000000 })
+
+    const pct = Math.max(0, Math.min(1, this.hp / this.maxHp))
+    const fillWidth = barWidth * pct
+    const fillColor = pct > 0.5 ? 0x2a9d8f : pct > 0.25 ? 0xe9c46a : 0xe63946
+
+    if (fillWidth > 0) {
+      this.healthBar.rect(barX, barY, fillWidth, barHeight).fill(fillColor)
+    }
   }
 
   public update(
@@ -73,6 +97,7 @@ export class Enemy {
 
   public takeDamage(amount: number) {
     this.hp -= amount
+    this.updateHealthBar()
     if (this.hp <= 0) {
       this.hp = 0
       this.isDead = true
