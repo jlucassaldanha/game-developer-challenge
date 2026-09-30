@@ -1,0 +1,92 @@
+import { Application, Container } from "pixi.js"
+import { InputManager } from "./systems/InputManager"
+import { PlayerShip } from "./entities/PlayerShip"
+
+export interface GameCallbacks {
+  onHealthChange: (hp: number) => void
+  onScoreChange: (score: number) => void
+  onGameOver: (finalScore: number, reason: 'time' | 'death') => void
+}
+
+export class GameEngine {
+  private app: Application
+  private container: Container
+  private callbacks: GameCallbacks
+  private isPaused: boolean = false
+
+  private isInitialized = false 
+  private isDestroyed = false
+  
+  private inputManager: InputManager 
+  private player!: PlayerShip
+
+  public readonly LOGICAL_WIDTH = 1280
+  public readonly LOGICAL_HEIGHT = 720
+
+  constructor(callbacks: GameCallbacks) {
+    this.app = new Application()
+    this.container = new Container()
+    this.callbacks = callbacks
+    this.inputManager = new InputManager()
+  }
+
+  async init(element: HTMLDivElement) {
+    // Tela deve adaptar
+    await this.app.init({
+      resizeTo: window,
+      backgroundColor: 0x1d3557,
+      resolution: window.devicePixelRatio || 1,
+      autoDensity: true
+    })
+
+    if (this.isDestroyed) { 
+      this.app.destroy(true, { children: true, texture: true }) 
+      return 
+    }
+
+    const scale = Math.min(
+      window.innerWidth / this.LOGICAL_WIDTH,
+      window.innerHeight / this.LOGICAL_HEIGHT
+    )
+
+    this.container.scale.set(scale)
+
+    this.container.x = (window.innerWidth - this.LOGICAL_WIDTH * scale) / 2
+    this.container.y = (window.innerHeight - this.LOGICAL_HEIGHT * scale) / 2
+
+    element.appendChild(this.app.canvas)
+    this.app.stage.addChild(this.container)
+
+    this.player = new PlayerShip(this.LOGICAL_WIDTH / 2, this.LOGICAL_HEIGHT / 2)
+    this.container.addChild(this.player.container)
+
+    this.app.ticker.add((ticker) => {
+      if (this.isPaused) return
+      this.update(ticker.deltaTime)
+    })
+  }
+
+  private update(delta: number) {
+    if (this.player) { 
+      this.player.update(delta, this.inputManager, { 
+        width: this.LOGICAL_WIDTH, 
+        height: this.LOGICAL_HEIGHT, 
+      }) 
+    }
+  }
+
+  public setPaused(paused: boolean) {
+    this.isPaused = paused
+  }
+
+  public destroy() {
+    this.isDestroyed = true 
+    this.inputManager.destroy()
+    
+    if (this.player) this.player.destroy()
+
+    if (this.isInitialized) { 
+      this.app.destroy(true, { children: true, texture: true }) 
+    }
+  }
+}
