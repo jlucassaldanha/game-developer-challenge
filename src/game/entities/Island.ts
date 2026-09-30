@@ -1,4 +1,4 @@
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics } from 'pixi.js'
 
 export class Island {
   public container: Container
@@ -17,9 +17,9 @@ export class Island {
       .stroke({ width: 6, color: 0xe9c46a })
 
     this.container.addChild(this.sprite)
-  } 
+  }
 
-  public destroy() { 
-    this.container.destroy({ children: true }) 
+  public destroy() {
+    this.container.destroy({ children: true })
   }
 }

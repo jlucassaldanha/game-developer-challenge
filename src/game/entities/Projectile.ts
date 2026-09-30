@@ -1,4 +1,4 @@
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics } from 'pixi.js'
 
 export class Projectile {
   public container: Container
@@ -6,7 +6,7 @@ export class Projectile {
   private speed = 8
   private vx: number
   private vy: number
-
+  
   public isDead = false
   public isEnemy: boolean
 
