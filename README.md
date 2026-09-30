@@ -4,6 +4,8 @@
 
 Este repositório contém a versão inicial do jogo **Pirate Battle**, desenvolvida como parte de um desafio técnico utilizando **React** e **PixiJS**.
 
+A mesma esta publicada em: 
+
 Nesta etapa do projeto, foram implementadas as fundações básicas:
 - **Mecânica principal do jogo**: Movimentação, colisão e gerenciamento de vida.
 - **Carregamento de Sprites e Canvas**: Carregamento inicial de assets gráficos via PixiJS.
